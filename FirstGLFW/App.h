@@ -4,16 +4,29 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include <vector>
+
+#include "Vertex.h"
+
 class App final
 {
 private:
     GLFWwindow * window = nullptr;
-    int x;
+    std::vector<Vertex> vertices;
+
+    GLuint programID;
+    GLuint vertexArrayID;
+    GLint mvp_location;
+
+    int width;
+    int height;
 public:
     App();
     ~App();
 
     void init(int width, int height, const std::string& title);
+    void initMesh();
+    void initShaderProgram();
     void Start();
 
     void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);

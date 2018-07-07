@@ -2,6 +2,35 @@
 #include <iostream>
 #include <functional>
 
+#include "thirdparty/glm/glm/gtc/matrix_transform.hpp"
+#include "thirdparty/glm/glm/gtc/type_ptr.hpp"
+
+
+using namespace std;
+
+void linkCheck(GLuint ID) {
+    GLint linkStatus, validateStatus;
+    glGetProgramiv(ID, GL_LINK_STATUS, &linkStatus);
+
+    if (linkStatus == GL_FALSE) {
+        cout << "Shader Linking FAILED" << endl;
+        GLchar messages[256];
+        glGetProgramInfoLog(ID, sizeof(messages), 0, &messages[0]);
+        cout << messages;
+    }
+
+    glValidateProgram(ID);
+    glGetProgramiv(ID, GL_VALIDATE_STATUS, &validateStatus);
+
+    cout << "Link: " << linkStatus << "  Validate: " << validateStatus << endl;
+    if (linkStatus == GL_FALSE) {
+        cout << "Shader Validation FAILED" << endl;
+        GLchar messages[256];
+        glGetProgramInfoLog(ID, sizeof(messages), 0, &messages[0]);
+        cout << messages;
+    }
+}
+
 App::App()
 {
 }
@@ -14,6 +43,8 @@ App::~App()
 
 void App::init( int width, int height, const std::string& title) 
 {
+    this->width = width;
+    this->height = height;
 
     /*initialize the glfw system*/
     if (!glfwInit()) {
@@ -50,15 +81,103 @@ void App::init( int width, int height, const std::string& title)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    initShaderProgram();
+    initMesh();
 }
+
+void App::initMesh() {
+    // In the CPU RAM
+    vertices.push_back( Vertex(-0.6f, -0.4f, 0.0f, 1.0f, 0.0f, 0.0f));
+    vertices.push_back( Vertex( 0.6f, -0.4f, 0.0f, 0.0f, 0.0f, 1.0f));
+    vertices.push_back( Vertex( 0.0f,  0.6f, 0.0f, 0.0f, 1.0f, 0.0f));
+
+    // Move to GPU RAM (VRAM)
+    glGenVertexArrays(1, &vertexArrayID);
+    glBindVertexArray(vertexArrayID);
+    GLuint bufferID;
+    glGenBuffers(1, &bufferID);
+    glBindBuffer(GL_ARRAY_BUFFER, bufferID);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), 
+        vertices.data(), GL_STATIC_DRAW);
+
+    mvp_location = glGetUniformLocation(programID, "MVP");
+    GLint vpos_location = glGetAttribLocation(programID, "vPos");
+    GLint vcolor_location = glGetAttribLocation(programID, "vCol");
+
+    glEnableVertexAttribArray(vpos_location);
+    glEnableVertexAttribArray(vcolor_location);
+    glVertexAttribPointer(vpos_location, 3, GL_FLOAT,
+        GL_FALSE, sizeof(Vertex), (void*)0);
+    glVertexAttribPointer(vcolor_location, 3, GL_FLOAT, GL_FALSE,
+        sizeof(Vertex), (void*)(sizeof(float) * 3));
+
+}
+
+void App::initShaderProgram() {
+    //1. write two shader codes
+    static const char* vertexShaderCode =
+        "uniform mat4 MVP; \n"
+        "attribute vec3 vPos; \n"
+        "attribute vec3 vCol; \n"
+        "varying vec3 color; \n"
+        "void main() \n "
+        "{ \n"
+        "   gl_Position = MVP * vec4(vPos, 1.0); \n"
+        "   color = vCol; \n"
+        "} \n";
+
+    static const char* fragmentShaderCode =
+        "varying vec3 color; \n"
+        "void main() \n"
+        "{ \n"
+        "    gl_FragColor = vec4(color, 1.0); \n"
+        "} \n";
+
+    //2. load the shader codes
+    programID = glCreateProgram();
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderCode, NULL);
+    glShaderSource(fragmentShader, 1, &fragmentShaderCode, NULL);
+    //3. compile the codes
+    glCompileShader(vertexShader);
+    glCompileShader(fragmentShader);
+    //3.1 Check the compiling code
+    // https://d.pr/D63ZbS
+
+    //4. attech the codes
+    glAttachShader(programID, vertexShader);
+    glAttachShader(programID, fragmentShader);
+    //5. link the codes
+    glLinkProgram(programID);
+
+    linkCheck(programID);
+
+}
+
+
+
+
 
 void App::Start() {
 
     while (!glfwWindowShouldClose(window)) {
-        glClear(GL_COLOR_BUFFER_BIT); // Render color
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Render color
         glClearColor(0.0f, 0.3f, 0.8f, 1.0f); // change color
 
+        float ratio = width / static_cast<float>(height);
+        glViewport(0, 0, width, height);
 
+        glm::mat4x4 m = glm::mat4(1.0);
+        glm::mat4x4 vp = glm::ortho(-ratio, ratio, -1.f, 1.f, 1.f, -1.f);
+        glm::mat4x4 mvp = m*vp;
+
+        glUseProgram(programID);
+        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, glm::value_ptr(mvp));
+
+        glBindVertexArray(vertexArrayID);
+        
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
