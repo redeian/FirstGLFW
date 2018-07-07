@@ -17,6 +17,7 @@ private:
     GLuint programID;
     GLuint vertexArrayID;
     GLint mvp_location;
+    GLuint textureID;
 
     int width;
     int height;
@@ -27,6 +28,7 @@ public:
     void init(int width, int height, const std::string& title);
     void initMesh();
     void initShaderProgram();
+    void initTexture();
     void Start();
 
     void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);

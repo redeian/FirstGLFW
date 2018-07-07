@@ -6,7 +6,7 @@ Vertex::Vertex()
 {
 }
 
-Vertex::Vertex(float x, float y, float z, float r, float g, float b)
+Vertex::Vertex(float x, float y, float z, float r, float g, float b, float u, float v)
 {
     pos.x = x;
     pos.y = y;
@@ -14,6 +14,8 @@ Vertex::Vertex(float x, float y, float z, float r, float g, float b)
     color.r = r;
     color.g = g;
     color.b = b;
+    texCoor.x = u;
+    texCoor.y = v;
 }
 
 Vertex::~Vertex()

@@ -5,6 +5,8 @@
 #include "thirdparty/glm/glm/gtc/matrix_transform.hpp"
 #include "thirdparty/glm/glm/gtc/type_ptr.hpp"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 using namespace std;
 
@@ -83,13 +85,14 @@ void App::init( int width, int height, const std::string& title)
 
     initShaderProgram();
     initMesh();
+    initTexture();
 }
 
 void App::initMesh() {
     // In the CPU RAM
-    vertices.push_back( Vertex(-0.6f, -0.4f, 0.0f, 1.0f, 0.0f, 0.0f));
-    vertices.push_back( Vertex( 0.6f, -0.4f, 0.0f, 0.0f, 0.0f, 1.0f));
-    vertices.push_back( Vertex( 0.0f,  0.6f, 0.0f, 0.0f, 1.0f, 0.0f));
+    vertices.push_back( Vertex(-0.6f, -0.4f, 0.0f, 1.0f, 0.0f, 0.0f, 0,0));
+    vertices.push_back( Vertex( 0.6f, -0.4f, 0.0f, 0.0f, 0.0f, 1.0f, 0,1));
+    vertices.push_back( Vertex( 0.0f,  0.6f, 0.0f, 0.0f, 1.0f, 0.0f, 1,1));
 
     // Move to GPU RAM (VRAM)
     glGenVertexArrays(1, &vertexArrayID);
@@ -103,13 +106,36 @@ void App::initMesh() {
     mvp_location = glGetUniformLocation(programID, "MVP");
     GLint vpos_location = glGetAttribLocation(programID, "vPos");
     GLint vcolor_location = glGetAttribLocation(programID, "vCol");
+    GLint vtex_location = glGetAttribLocation(programID, "vTex");
 
     glEnableVertexAttribArray(vpos_location);
     glEnableVertexAttribArray(vcolor_location);
+    glEnableVertexAttribArray(vtex_location);
     glVertexAttribPointer(vpos_location, 3, GL_FLOAT,
         GL_FALSE, sizeof(Vertex), (void*)0);
     glVertexAttribPointer(vcolor_location, 3, GL_FLOAT, GL_FALSE,
         sizeof(Vertex), (void*)(sizeof(float) * 3));
+    glVertexAttribPointer(vtex_location, 2, GL_FLOAT, GL_FALSE,
+        sizeof(Vertex), (void*)(sizeof(float) * 6));
+}
+
+void App::initTexture() {
+    
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    // load a texture
+    int imgWidth;
+    int imgHeight;
+    int n;
+    unsigned char *data = stbi_load("test2.png", &imgWidth, &imgHeight, &n, 0);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, imgWidth, imgHeight, 
+                 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 }
 
@@ -119,18 +145,23 @@ void App::initShaderProgram() {
         "uniform mat4 MVP; \n"
         "attribute vec3 vPos; \n"
         "attribute vec3 vCol; \n"
+        "attribute vec2 vTex; \n"
         "varying vec3 color; \n"
+        "varying vec2 texCoord; \n"
         "void main() \n "
         "{ \n"
         "   gl_Position = MVP * vec4(vPos, 1.0); \n"
         "   color = vCol; \n"
+        "   texCoord = vTex; \n"
         "} \n";
 
     static const char* fragmentShaderCode =
+        "uniform sampler2D texture; \n"
         "varying vec3 color; \n"
+        "varying vec2 texCoord; \n"
         "void main() \n"
         "{ \n"
-        "    gl_FragColor = vec4(color, 1.0); \n"
+        "    gl_FragColor = texture2D( texture, texCoord);\n"
         "} \n";
 
     //2. load the shader codes
@@ -156,9 +187,6 @@ void App::initShaderProgram() {
 }
 
 
-
-
-
 void App::Start() {
 
     while (!glfwWindowShouldClose(window)) {
@@ -168,11 +196,22 @@ void App::Start() {
         float ratio = width / static_cast<float>(height);
         glViewport(0, 0, width, height);
 
-        glm::mat4x4 m = glm::mat4(1.0);
+        // initialize transformation
+        const glm::vec3 axis(0, 0, 1);
+        glm::vec3 trs(0, 0, 0);
+        glm::vec3 vscale(1, 1, 1);
+
+        // create a model matrix
+        glm::mat4 translation = glm::translate(glm::mat4(1.0f), trs);
+        glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), 
+                            (glm::mediump_float)glfwGetTime(), axis);
+        glm::mat4 scale = glm::scale(glm::mat4(1.0f), vscale);
+        glm::mat4x4 m = translation * rotation * scale;
         glm::mat4x4 vp = glm::ortho(-ratio, ratio, -1.f, 1.f, 1.f, -1.f);
         glm::mat4x4 mvp = m*vp;
 
         glUseProgram(programID);
+        glBindTexture(GL_TEXTURE_2D, textureID);
         glUniformMatrix4fv(mvp_location, 1, GL_FALSE, glm::value_ptr(mvp));
 
         glBindVertexArray(vertexArrayID);

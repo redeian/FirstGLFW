@@ -6,9 +6,10 @@ struct Vertex
 {
     glm::vec3 pos;
     glm::vec3 color;
+    glm::vec2 texCoor;
 
     Vertex();
-    Vertex( float x, float y, float z, float r, float g, float b);
+    Vertex( float x, float y, float z, float r, float g, float b, float u, float v);
     ~Vertex();
 };
 
