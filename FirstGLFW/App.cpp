@@ -90,9 +90,26 @@ void App::init( int width, int height, const std::string& title)
 
 void App::initMesh() {
     // In the CPU RAM
-    vertices.push_back( Vertex(-0.6f, -0.4f, 0.0f, 1.0f, 0.0f, 0.0f, 0,0));
-    vertices.push_back( Vertex( 0.6f, -0.4f, 0.0f, 0.0f, 0.0f, 1.0f, 0,1));
-    vertices.push_back( Vertex( 0.0f,  0.6f, 0.0f, 0.0f, 1.0f, 0.0f, 1,1));
+    int frame = 0;
+    int ssw = 1;
+    int ssh = 1;
+    float tl = frame * ssw, tt = frame * ssh, tr = tl + ssw, tb = tt + ssh;
+    vertices.push_back( Vertex( -0.8f, -0.8f, 0.0f, 1.0f, 1.0f, 1.0f, tl, tb, 0, 0, 1));
+    vertices.push_back( Vertex( -0.8f,  0.8f, 0.0f, 1.0f, 1.0f, 1.0f, tl, tt, 0, 0, 1));
+    vertices.push_back( Vertex(  0.8f,  0.8f, 0.0f, 1.0f, 1.0f, 1.0f, tr, tt, 0, 0, 1));
+    vertices.push_back( Vertex(  0.8f, -0.8f, 0.0f, 1.0f, 1.0f, 1.0f, tr, tb, 0, 0, 1));
+
+    /*
+    
+    //x ,y ,r , g , b , u ,v 
+    { -0.8f, -0.8f, 1.f, 0.f, 0.f, tl, tb },
+    { -0.8f,  0.8f, 0.f, 1.f, 0.f, tl, tt },
+    {  0.8f,  0.8f, 0.f, 0.f, 1.f, tr, tt },
+    {  0.8f, -0.8f, 0.f, 0.f, 1.f, tr, tb }
+
+
+    */
+
 
     // Move to GPU RAM (VRAM)
     glGenVertexArrays(1, &vertexArrayID);
@@ -103,20 +120,29 @@ void App::initMesh() {
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), 
         vertices.data(), GL_STATIC_DRAW);
 
+    // uniform variables
     mvp_location = glGetUniformLocation(programID, "MVP");
+    normalID = glGetUniformLocation(programID, "matNormal");
+    lightPosID = glGetUniformLocation(programID, "lightPos");
+  
+    // attribute variables
     GLint vpos_location = glGetAttribLocation(programID, "vPos");
     GLint vcolor_location = glGetAttribLocation(programID, "vCol");
     GLint vtex_location = glGetAttribLocation(programID, "vTex");
+    GLint vnormal_location = glGetAttribLocation(programID, "vNorm");
 
     glEnableVertexAttribArray(vpos_location);
     glEnableVertexAttribArray(vcolor_location);
     glEnableVertexAttribArray(vtex_location);
+    glEnableVertexAttribArray(vnormal_location);
     glVertexAttribPointer(vpos_location, 3, GL_FLOAT,
         GL_FALSE, sizeof(Vertex), (void*)0);
     glVertexAttribPointer(vcolor_location, 3, GL_FLOAT, GL_FALSE,
         sizeof(Vertex), (void*)(sizeof(float) * 3));
     glVertexAttribPointer(vtex_location, 2, GL_FLOAT, GL_FALSE,
         sizeof(Vertex), (void*)(sizeof(float) * 6));
+    glVertexAttribPointer(vnormal_location, 3, GL_FLOAT, GL_FALSE,
+        sizeof(Vertex), (void*)(sizeof(float) * 8));
 }
 
 void App::initTexture() {
@@ -143,15 +169,22 @@ void App::initShaderProgram() {
     //1. write two shader codes
     static const char* vertexShaderCode =
         "uniform mat4 MVP; \n"
+        "uniform vec3 lightPos; \n"
+        "uniform mat3 matNormal; \n"
         "attribute vec3 vPos; \n"
         "attribute vec3 vCol; \n"
         "attribute vec2 vTex; \n"
+        "attribute vec3 vNorm; \n"
         "varying vec3 color; \n"
         "varying vec2 texCoord; \n"
         "void main() \n "
         "{ \n"
+        "   lightPos = normalize(lightPos); \n"
+        "   vec3 norm = normalize( matNormal * normalize(vNorm)); \n"
+        "    norm = normalize(vNorm); \n"
         "   gl_Position = MVP * vec4(vPos, 1.0); \n"
-        "   color = vCol; \n"
+        "   float df = max(dot(norm, lightPos), 0.0); \n"
+        "   color = vCol * df ; \n"
         "   texCoord = vTex; \n"
         "} \n";
 
@@ -161,7 +194,7 @@ void App::initShaderProgram() {
         "varying vec2 texCoord; \n"
         "void main() \n"
         "{ \n"
-        "    gl_FragColor = texture2D( texture, texCoord);\n"
+        "    gl_FragColor = texture2D(texture, texCoord) * vec4(color, 1.0);\n"
         "} \n";
 
     //2. load the shader codes
@@ -196,6 +229,8 @@ void App::Start() {
         float ratio = width / static_cast<float>(height);
         glViewport(0, 0, width, height);
 
+        glm::vec3 vLightPos = glm::vec3( 10, 50 * sinf( (glm::mediump_float)glfwGetTime() ),-5);
+
         // initialize transformation
         const glm::vec3 axis(0, 0, 1);
         glm::vec3 trs(0, 0, 0);
@@ -206,17 +241,20 @@ void App::Start() {
         glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), 
                             (glm::mediump_float)glfwGetTime(), axis);
         glm::mat4 scale = glm::scale(glm::mat4(1.0f), vscale);
-        glm::mat4x4 m = translation * rotation * scale;
-        glm::mat4x4 vp = glm::ortho(-ratio, ratio, -1.f, 1.f, 1.f, -1.f);
-        glm::mat4x4 mvp = m*vp;
+        glm::mat4 m = translation * scale;
+        glm::mat4 vp = glm::ortho(-ratio, ratio, -1.f, 1.f, 1.f, -1.f);
+        glm::mat4 mvp = m*vp;
+        glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(m)));
 
         glUseProgram(programID);
         glBindTexture(GL_TEXTURE_2D, textureID);
+        glUniformMatrix3fv(normalID, 1, GL_FALSE, glm::value_ptr(normalMatrix));
         glUniformMatrix4fv(mvp_location, 1, GL_FALSE, glm::value_ptr(mvp));
+        glUniform3fv(lightPosID, 1, glm::value_ptr(vLightPos));
 
         glBindVertexArray(vertexArrayID);
         
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawArrays(GL_QUADS, 0, 4);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

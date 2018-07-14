@@ -81,11 +81,11 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\glew\include;C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\glfw\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\glew\include;C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\glfw\include;C:\Program Files (x86)\OpenAL 1.1 SDK\include;C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\alut\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\glew\lib\Release\Win32;C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glew32.lib;glu32.lib;glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\glew\lib\Release\Win32;C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\glfw\lib-vc2015;C:\Program Files %28x86%29\OpenAL 1.1 SDK\libs\Win32;C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\alut\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>alut.lib;OpenAL32.lib;glew32.lib;glu32.lib;glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -104,13 +104,13 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\glew\include;C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\glfw\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\glew\include;C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\glfw\include;C:\Program Files (x86)\OpenAL 1.1 SDK\include;C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\alut\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\glew\lib\Release\Win32;C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\glfw\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glew32.lib;glu32.lib;glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\glew\lib\Release\Win32;C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\glfw\lib-vc2015;C:\Program Files %28x86%29\OpenAL 1.1 SDK\libs\Win32;C:\Users\redeian\Documents\Visual Studio 2017\Projects\FirstGLFW\FirstGLFW\thirdparty\alut\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>alut.lib;OpenAL32.lib;glew32.lib;glu32.lib;glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -129,11 +129,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
+    <ClCompile Include="AudioManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Vertex.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
+    <ClInclude Include="AudioManager.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Vertex.h" />
   </ItemGroup>

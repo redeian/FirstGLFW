@@ -18,6 +18,8 @@ private:
     GLuint vertexArrayID;
     GLint mvp_location;
     GLuint textureID;
+    GLuint normalID;
+    GLuint lightPosID;
 
     int width;
     int height;
